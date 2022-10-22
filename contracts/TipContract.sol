@@ -2,11 +2,14 @@
 
 pragma solidity ^0.8.0;
 
-//106357
+import "./SafeMath.sol";
 
 contract TipContract {
+    using SafeMath for uint256;
+
     // we need only 10 accounts
-    uint256 private index_of_payers = 0;
+    uint256 public index_of_payers = 0;
+    uint256 private totalTip;
 
     // calculted tip
     uint256 private tiptip;
@@ -43,8 +46,9 @@ contract TipContract {
         uint256 _tip_per,
         uint256 _no_of_people
     ) public onlyOwner returns (uint256) {
-        require((_bill_price * _tip_per) >= 10000);
-        tiptip = ((_bill_price * _tip_per) / 10000) / _no_of_people;
+        //require((_bill_price * _tip_per) >= 10000);
+        assert((_bill_price).mul(_tip_per) >= 1000);
+        tiptip = (((_bill_price).mul(_tip_per)).div(10000)).div(_no_of_people);
         emit TipEvent(tiptip, "OUR CALCULATED TIP IN WEI");
         return tiptip;
     }
@@ -60,16 +64,14 @@ contract TipContract {
 
     // function for payers to pay tip
     function Pay_Tip() public payable notOwner {
-        require(AlreadyPayed() == false, "Sorry! You have already payed.");
-        require(
-            msg.value == tiptip,
-            "Please you are required to pay the exact amount of tip no more , no less."
-        );
-        require(index_of_payers <= 9, "No of Payers are full");
+        assert(AlreadyPayed() == false);
+        assert(msg.value == tiptip);
+        assert(index_of_payers <= 9);
 
         bill_payers.push(payable(msg.sender));
         exists[msg.sender] = true;
         index_of_payers++;
+        totalTip += msg.value;
     }
 
     // this function will send all the money to the manager's acc
@@ -80,5 +82,9 @@ contract TipContract {
     //getter functions
     function getTip() public view returns (uint256) {
         return tiptip;
+    }
+
+    function getTotalTip() public view returns (uint256) {
+        return totalTip;
     }
 }
